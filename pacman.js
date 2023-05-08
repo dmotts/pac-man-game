@@ -1,70 +1,60 @@
-// Game elements
-let canvas;
-let ctx;
-let gameBoard;
-let pacman;
-let ghosts = [];
+var canvas = document.getElementById('canvas');
+var context = canvas.getContext('2d');
 
-// Game parameters
-const cellSize = 32;
-const boardWidth = 21;
-const boardHeight = 21;
-const gameWidth = cellSize * boardWidth;
-const gameHeight = cellSize * boardHeight;
+var pacman = {
+  x: canvas.width / 2,
+  y: canvas.height / 2,
+  radius: 25,
+  mouthAngle: 1 / 6,
+  direction: 'right'
+};
 
-// Game setup
-function setup() {
-  canvas = document.getElementById("game-canvas");
-  canvas.width = gameWidth;
-  canvas.height = gameHeight;
-  ctx = canvas.getContext("2d");
-
-  gameBoard = new GameBoard(boardWidth, boardHeight, cellSize);
-  gameBoard.create();
-
-  pacman = new Pacman(13, 16, 1, "right", cellSize);
-  ghosts.push(new Ghost(11, 11, 1, "right", cellSize, "red"));
-
-  document.addEventListener("keydown", handleInput);
+function drawPacman() {
+  context.beginPath();
+  context.arc(pacman.x, pacman.y, pacman.radius, pacman.mouthAngle * Math.PI, (2 - pacman.mouthAngle) * Math.PI);
+  context.lineTo(pacman.x, pacman.y);
+  context.fillStyle = 'yellow';
+  context.fill();
+  context.closePath();
 }
 
-// Game loop
-function gameLoop() {
-  clearCanvas();
-  gameBoard.draw();
-  pacman.update();
-  pacman.draw();
-  ghosts.forEach(ghost => {
-    ghost.update();
-    ghost.draw();
-  });
-
-  requestAnimationFrame(gameLoop);
-}
-
-// Helper function to clear the canvas
 function clearCanvas() {
-  ctx.clearRect(0, 0, gameWidth, gameHeight);
+  context.clearRect(0, 0, canvas.width, canvas.height);
 }
 
-// Event handler for user input
-function handleInput(e) {
-  switch (e.keyCode) {
-    case 37: // left arrow
-      pacman.setDirection("left");
-      break;
-    case 38: // up arrow
-      pacman.setDirection("up");
-      break;
-    case 39: // right arrow
-      pacman.setDirection("right");
-      break;
-    case 40: // down arrow
-      pacman.setDirection("down");
-      break;
+function movePacman() {
+  if (pacman.direction == 'right') {
+    pacman.x += 5;
+  } else if (pacman.direction == 'left') {
+    pacman.x -= 5;
+  } else if (pacman.direction == 'up') {
+    pacman.y -= 5;
+  } else if (pacman.direction == 'down') {
+    pacman.y += 5;
   }
 }
 
-// Start the game
-setup();
-gameLoop();
+function changeDirection(event) {
+  if (event.keyCode == 37) {
+    pacman.direction = 'left';
+  } else if (event.keyCode == 38) {
+    pacman.direction = 'up';
+  } else if (event.keyCode == 39) {
+    pacman.direction = 'right';
+  } else if (event.keyCode == 40) {
+    pacman.direction = 'down';
+  }
+}
+
+function setup() {
+  canvas.width = 400;
+  canvas.height = 400;
+  window.addEventListener('keydown', changeDirection);
+  setInterval(function() {
+    clearCanvas();
+    movePacman();
+    drawPacman();
+  }, 30);
+}
+
+window.addEventListener('load', setup);
