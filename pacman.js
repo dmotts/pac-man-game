@@ -1,149 +1,113 @@
-const COLS = 28;
-const ROWS = 36;
-const TILE_SIZE = 20;
-const WIDTH = COLS * TILE_SIZE;
-const HEIGHT = ROWS * TILE_SIZE;
+// Constants
+var PACMAN_SPEED = 80; // how fast should Pacman move?
+var GHOST_SPEED = 80; // how fast should the ghosts move?
+var DOT_SIZE = 10; // what should be the size of the dots?
+var WALL_THICKNESS = 4; // what should be the thickness of the walls?
 
-const map = [
-    "1111111111111111111111111111",
-    "1200000000000000000000000021",
-    "1201110111111111111011110221",
-    "1201310000000010000010310221",
-    "1201310111111111111010310221",
-    "1201310100000000001010310221",
-    "1201310111111221111010310221",
-    "1200000100001221000010000021",
-    "1111110111111101111011111111",
-    "0000000000000000000000000000",
-    "1111110111111101111011111111",
-    "1200000100001221000010000021",
-    "1201310111111221111010310221",
-    "1201310100000000001010310221",
-    "1201310111111111111010310221",
-    "1201310000000010000010310221",
-    "1201110111111111111011110221",
-    "1200000000000000000000000021",
-    "1111111111111111111111111111",
-    "0000000000000000000000000000",
-    "1111111111111111111111111111",
-    "1200000000000000000000000021",
-    "1201110111111111111011110221",
-    "1201310110000000001010310221",
-    "1201310111111221111010310221",
-    "1200000100001221000010000021",
-    "1111110111111101111011111111",
-    "0000000000000000000000000000",
-    "1111110111111101111011111111",
-    "1200000100001221000010000021",
-    "1201310111111221111010310221",
-    "1201310100000000001010310221",
-    "1201310111111111111010310221",
-    "1201310000000010000010310221",
-    "1201110111111111111011110221",
-    "1200000000000000000000000021",
-    "1111111111111111111111111111",
-];
+// Game elements
+var game = null;
+var pacman = null;
+var ghosts = null;
+var dots = null;
+var walls = null;
+var score = 0;
+var lives = 3;
+var game_over = false;
 
-// The map variable goes here
-
-const state = {
-  player: {
-    x: 1,
-    y: 1
-  }
+// Initializes the game
+function init() {
+  game = new Game();
+  game.init();
+  pacman = new Pacman();
+  pacman.init();
+  ghosts = new Ghosts();
+  ghosts.init();
+  dots = new Dots();
+  dots.init();
+  walls = new Walls();
+  walls.init();
+  updateScore(0);
+  updateLives(3);
 }
 
+// Updates the score
+function updateScore(new_score) {
+  score = new_score;
+  document.getElementById("score").innerHTML = "Score: " + score;
+}
+
+// Updates the lives
+function updateLives(new_lives) {
+  lives = new_lives;
+  document.getElementById("lives").innerHTML = "Lives: " + lives;
+}
+
+// Draws the game
 function draw() {
-  context.clearRect(0, 0, canvas.width, canvas.height);
+  clearScreen();
 
-  // Draw the score
-  context.font = "20px Arial";
-  context.fillStyle = "white";
-  context.fillText("Score: " + score, 10, 30);
+  // draw dots
+  dots.draw();
 
-  // Draw the lives
-  for (var i = 0; i < lives; i++) {
-    var x = canvas.width - 25 - (i * 25);
-    var y = 5;
-    context.drawImage(lifeImg, x, y, 20, 20);
-  }
+  // draw walls
+  walls.draw();
 
-  // Draw the pellets
-  for (var i = 0; i < pellets.length; i++) {
-    var pellet = pellets[i];
-    if (!pellet.eaten) {
-      context.beginPath();
-      context.fillStyle = "white";
-      context.arc(pellet.x, pellet.y, 5, 0, Math.PI * 2);
-      context.closePath();
-      context.fill();
-    }
-  }
+  // draw ghosts
+  ghosts.draw();
 
-  // Draw the power pellets
-  for (var i = 0; i < powerPellets.length; i++) {
-    var powerPellet = powerPellets[i];
-    if (!powerPellet.eaten) {
-      context.beginPath();
-      context.fillStyle = "white";
-      context.arc(powerPellet.x, powerPellet.y, 10, 0, Math.PI * 2);
-      context.closePath();
-      context.fill();
-    }
-  }
+  // draw pacman
+  pacman.draw();
+}
 
-  // Draw the ghosts
-  for (var i = 0; i < ghosts.length; i++) {
-    var ghost = ghosts[i];
-    context.drawImage(ghostImg, ghost.x - ghost.radius, ghost.y - ghost.radius, ghost.radius * 2, ghost.radius * 2);
-  }
+// Clears the screen
+function clearScreen() {
+  var ctx = document.getElementById("canvas").getContext("2d");
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+}
 
-  // Draw Pacman
-  context.beginPath();
-  context.arc(pacman.x, pacman.y, pacman.radius, pacman.mouthAngle1, pacman.mouthAngle2);
-  context.lineTo(pacman.x, pacman.y);
-  context.closePath();
-  context.fillStyle = "yellow";
-  context.fill();
+// Keydown handler
+$(document).keydown(function (e) {
+  pacman.keydown(e);
+});
 
-  // Draw the eyes
-  context.beginPath();
-  context.arc(pacman.x + pacman.eyeX, pacman.y + pacman.eyeY, 2, 0, Math.PI * 2);
-  context.fillStyle = "black";
-  context.fill();
-  
-  // Draw the ghost's eyes
-  for (var i = 0; i < ghosts.length; i++) {
-    var ghost = ghosts[i];
-    var angle = Math.atan2(pacman.y - ghost.y, pacman.x - ghost.x);
-    var eyeX = Math.cos(angle) * ghost.radius / 2;
-    var eyeY = Math.sin(angle) * ghost.radius / 2;
-    context.beginPath();
-    context.arc(ghost.x + eyeX, ghost.y + eyeY, 2, 0, Math.PI * 2);
-    context.fillStyle = "black";
-    context.fill();
-  }
+// Game loop
+function gameLoop() {
+  // move pacman
+  pacman.move();
 
-  // Move Pacman
-  pacman.x += pacman.vx;
-  pacman.y += pacman.vy;
+  // move ghosts
+  ghosts.move();
 
-  // Move the ghosts
-  for (var i = 0; i < ghosts.length; i++) {
-    moveGhost(ghosts[i]);
-  }
-
-  // Check for collisions
+  // check for collisions
   checkCollisions();
 
-  // Check if the level is cleared
-  if (pelletsEaten == pellets.length) {
-    level++;
-    initialize();
-  }
+  // draw game
+  draw();
 
-  // Check if the game is over
-  if (lives == 0) {
+  // check for game over
+  if (game_over) {
     gameOver();
   }
 }
+
+// Checks for collisions between pacman, ghosts, and dots
+function checkCollisions() {
+  // check for collisions between pacman and ghosts
+  ghosts.checkCollisions();
+
+  // check for collisions between pacman and dots
+  dots.checkCollisions();
+}
+
+// Game over
+function gameOver() {
+  clearInterval(game.interval_id);
+  game_over = true;
+  alert("Game over! Your score is " + score);
+}
+
+// Initializes the game when the window loads
+window.onload = function () {
+  init();
+  game.interval_id = setInterval(gameLoop, 1000 / 60);
+};
