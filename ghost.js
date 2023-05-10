@@ -1,3 +1,5 @@
+import { Gameboard } from "./gameboard.js";
+
 export default class Ghost {
   constructor(game, row, col, color) {
     this.game = game;
